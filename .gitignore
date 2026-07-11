@@ -1,0 +1,37 @@
+# Godot auto generated files
+.godot/
+
+# TODO remove this after removing the extension
+# Also remove the bin folder
+# Ignore library files but not the gdextension file
+bin/*
+!bin/android
+bin/android/*
+!bin/android/.gitkeep
+!bin/linux
+bin/linux/*
+!bin/linux/.gitkeep
+!bin/macos
+bin/macos/*
+!bin/macos/.gitkeep
+!bin/windows
+bin/windows/*
+!bin/windows/.gitkeep
+
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+
+# Jetbrains
+.idea/
+
+# Export
+*.x86_64
+*.sh
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# Other stuff
+*.log

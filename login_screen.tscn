@@ -1,0 +1,149 @@
+[gd_scene format=3 uid="uid://dh0oj81pufivs"]
+
+[ext_resource type="Texture2D" uid="uid://c7gm3ibtnu2jv" path="res://assets/ALLqk82Edit.png" id="1_3u8nt"]
+[ext_resource type="Script" uid="uid://borjdmkdqkxas" path="res://login_screen.gd" id="1_7xvqn"]
+[ext_resource type="Theme" uid="uid://bjaijm4ioiexd" path="res://styles/button.tres" id="3_3u8nt"]
+[ext_resource type="Texture2D" uid="uid://dqh63ns6f65uk" path="res://assets/power.svg" id="4_np7ol"]
+[ext_resource type="Texture2D" uid="uid://3gpyiuc8ve4j" path="res://assets/refresh-cw.svg" id="5_np7ol"]
+
+[sub_resource type="Theme" id="Theme_np7ol"]
+Button/colors/icon_normal_color = Color(1, 1, 1, 1)
+
+[node name="LoginScreen" type="Control" unique_id=774786334]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_7xvqn")
+metadata/_edit_lock_ = true
+metadata/_edit_horizontal_guides_ = [616.0, 528.0]
+
+[node name="AlLqk82Edit" type="Sprite2D" parent="." unique_id=887923588]
+position = Vector2(960, 540)
+texture = ExtResource("1_3u8nt")
+metadata/_edit_lock_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1753237947]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.16683334
+anchor_top = 0.356
+anchor_right = 0.30016667
+anchor_bottom = 0.59300005
+offset_left = -0.32000732
+offset_top = -0.480011
+offset_right = -0.32000732
+offset_bottom = -0.44006348
+theme_override_constants/separation = 20
+alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="Alert" type="Label" parent="VBoxContainer" unique_id=158664666]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="SessionSelect" type="OptionButton" parent="VBoxContainer" unique_id=758029820]
+unique_name_in_owner = true
+layout_mode = 2
+text_overrun_behavior = 3
+
+[node name="Username" type="OptionButton" parent="VBoxContainer" unique_id=1711039783]
+unique_name_in_owner = true
+layout_mode = 2
+text_overrun_behavior = 3
+
+[node name="AuthAnswer" type="LineEdit" parent="VBoxContainer" unique_id=937236301]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "password"
+keep_editing_on_text_submit = true
+secret = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1578574125]
+layout_mode = 2
+alignment = 1
+
+[node name="LogIn" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=799944523]
+unique_name_in_owner = true
+layout_mode = 2
+theme = ExtResource("3_3u8nt")
+text = "Log in"
+
+[node name="Log" type="RichTextLabel" parent="." unique_id=1163721506]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 600.0
+offset_top = 40.0
+offset_right = 976.0
+offset_bottom = 456.0
+scroll_following = true
+
+[node name="CancelSession" type="Button" parent="." unique_id=1445519896]
+visible = false
+layout_mode = 0
+offset_left = 296.0
+offset_top = 672.0
+offset_right = 432.0
+offset_bottom = 704.0
+theme = ExtResource("3_3u8nt")
+text = "Cancel session"
+
+[node name="CreateSession" type="Button" parent="." unique_id=2128471965]
+visible = false
+layout_mode = 0
+offset_left = 464.0
+offset_top = 672.0
+offset_right = 600.0
+offset_bottom = 704.0
+text = "Create session
+"
+
+[node name="AnswerAuth" type="Button" parent="." unique_id=1102540955]
+visible = false
+layout_mode = 0
+offset_left = 296.0
+offset_top = 728.0
+offset_right = 432.0
+offset_bottom = 760.0
+text = "Submit answer"
+
+[node name="StartSession" type="Button" parent="." unique_id=1150643008]
+visible = false
+layout_mode = 0
+offset_left = 464.0
+offset_top = 728.0
+offset_right = 600.0
+offset_bottom = 760.0
+text = "Start session"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=55084471]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.19583334
+anchor_top = 0.67425925
+anchor_right = 0.27064583
+anchor_bottom = 0.7184815
+offset_top = -0.2000122
+offset_right = 0.35998535
+offset_bottom = 0.039978027
+theme_override_constants/separation = 48
+alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="Shutdown" type="Button" parent="HBoxContainer" unique_id=2009518262]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme = SubResource("Theme_np7ol")
+icon = ExtResource("4_np7ol")
+icon_alignment = 1
+
+[node name="Restart" type="Button" parent="HBoxContainer" unique_id=367325674]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("5_np7ol")
+icon_alignment = 1

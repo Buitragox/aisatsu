@@ -1,0 +1,41 @@
+[gd_resource type="Theme" format=3 uid="uid://bjaijm4ioiexd"]
+
+[ext_resource type="StyleBox" uid="uid://c5c8rg6kc0hnf" path="res://styles/disabled_button.tres" id="1_1b0lu"]
+[ext_resource type="StyleBox" uid="uid://djc82sfssd420" path="res://styles/normal_button.tres" id="1_wibnl"]
+[ext_resource type="StyleBox" uid="uid://b86geyul71dyf" path="res://styles/pressed.tres" id="3_dvs7i"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wibnl"]
+content_margin_left = 20.0
+content_margin_top = 5.0
+content_margin_right = 20.0
+content_margin_bottom = 5.0
+bg_color = Color(0.86036915, 0.8603692, 0.8603691, 1)
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.025363795, 0.025363805, 0.02536378, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+corner_detail = 12
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[resource]
+Button/colors/font_color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+Button/colors/font_disabled_color = Color(0.91664016, 0.9166398, 0.9166398, 0.8352941)
+Button/colors/font_focus_color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+Button/colors/font_hover_color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+Button/colors/font_hover_pressed_color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+Button/colors/font_pressed_color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+Button/colors/icon_disabled_color = Color(1, 1, 1, 0.4)
+Button/styles/disabled = ExtResource("1_1b0lu")
+Button/styles/focus = SubResource("StyleBoxFlat_wibnl")
+Button/styles/hover = ExtResource("1_wibnl")
+Button/styles/normal = ExtResource("1_wibnl")
+Button/styles/pressed = ExtResource("3_dvs7i")
