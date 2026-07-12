@@ -14,7 +14,8 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="godotgreetd"
+config/name="aisatsu"
+config/description="Login application (greeter) for linux and greetd"
 run/main_scene="uid://dh0oj81pufivs"
 config/features=PackedStringArray("4.6", "Forward Plus")
 boot_splash/show_image=false
