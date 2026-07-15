@@ -10,21 +10,33 @@ func _init() -> void:
 
 
 func create_session(username: String) -> GreetdResponse:
-	return _send_request({"type": "create_session", "username": username})
+	return _send_request({ "type": "create_session", "username": username })
 
 
-#func answer_auth_message(answer: Variant) -> GreetdResponse:
-	#return _send_request({"type": "create_session", "username": username})
+func answer_auth_message(answer: Variant) -> GreetdResponse:
+	var answer_type := typeof(answer)
+	if answer_type != TYPE_NIL and answer_type != TYPE_STRING:
+		return GreetdResponse.client_error(
+			ERR_INVALID_PARAMETER,
+			"Parameter 'answer' must be String or null; got %s" % type_string(answer_type),
+		)
+
+	return _send_request({ "type": "post_auth_message_response", "response": answer })
+
+
+func start_session(cmd: Array[String], env: Array[String] = []) -> GreetdResponse:
+	return _send_request({ "type": "start_session", "cmd": cmd, "env": env })
+
+
+func cancel_session():
+	return _send_request({ "type": "cancel_session" })
 
 
 func _send_request(request: Dictionary) -> GreetdResponse:
 	var stream := StreamPeerUDS.new()
 	var error := stream.connect_to_host(socket_path)
 	if error != OK:
-		return GreetdResponse.client_error(
-			error,
-			"Failed to connect to greetd: %s" % error_string(error),
-		)
+		return GreetdResponse.client_error(error, "Failed to connect to greetd: %s" % error_string(error))
 
 	stream.put_utf8_string(JSON.stringify(request))
 	var json_response := stream.get_utf8_string()
@@ -40,10 +52,7 @@ func _send_request(request: Dictionary) -> GreetdResponse:
 		)
 
 	if typeof(json.data) != TYPE_DICTIONARY:
-		return GreetdResponse.client_error(
-			ERR_INVALID_DATA,
-			"Expected a JSON object from greetd",
-		)
+		return GreetdResponse.client_error(ERR_INVALID_DATA, "Expected a JSON object from greetd")
 
 	var data: Dictionary = json.data
 	return _parse_response(data)
@@ -60,7 +69,6 @@ func _parse_response(data: Dictionary) -> GreetdResponse:
 	match response_type:
 		"success":
 			return GreetdResponse.success()
-
 		"auth_message":
 			var message_type: Variant = data.get("auth_message_type")
 			var message: Variant = data.get("auth_message")
@@ -78,7 +86,6 @@ func _parse_response(data: Dictionary) -> GreetdResponse:
 				)
 
 			return GreetdResponse.auth_message(parsed_message_type, message)
-
 		"error":
 			var error_type: Variant = data.get("error_type")
 			var description: Variant = data.get("description")
@@ -96,7 +103,6 @@ func _parse_response(data: Dictionary) -> GreetdResponse:
 				)
 
 			return GreetdResponse.greetd_error(parsed_error_type, description)
-
 		_:
 			return GreetdResponse.client_error(
 				ERR_INVALID_DATA,

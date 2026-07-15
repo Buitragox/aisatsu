@@ -1,10 +1,17 @@
 extends Node
 
+# TODO: extract the config to it's own class?
 const CONFIG_PATH = "user://config.cfg"
-var greeter := GreetdGreeter.new()
+
+var greeter := Greeter.new()
 var config := ConfigFile.new()
 var auth_thread: Thread = null
 var is_authenticating := false
+
+
+func _init() -> void:
+	if OS.has_feature("template"):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
 func _ready() -> void:
@@ -25,6 +32,55 @@ func _ready() -> void:
 	%AuthAnswer.grab_focus() # Automatically focus the password field for quick login.
 
 	get_tree().set_auto_accept_quit(false) # Handle quit manually
+
+
+## Manually handle app closing.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_quit()
+
+
+func login() -> void:
+	# Prevent multiple simultaneous login attempts
+	if is_authenticating:
+		return
+
+	is_authenticating = true
+	_set_ui_enabled(false)
+	%Alert.text = "Authenticating..."
+
+	var username: String = %Username.text
+	var password: String = %AuthAnswer.text
+	var response := greeter.create_session(username)
+
+	if response is GreetdError:
+		%Alert.text = response.error_description
+		_log_info(response.error_description)
+		is_authenticating = false
+		_set_ui_enabled(true)
+		return
+	elif response is GreetdAuthMessage:
+		_log_info("%s - %s" % [response.auth_message_type, response.auth_message])
+	else:
+		# TODO if the response is a success then we can start the session
+		# How does that happen? Users without passwords?
+		pass
+
+	_log_info("Session created")
+
+	# Run the blocking authentication on a separate thread
+	auth_thread = Thread.new()
+	auth_thread.start(_authenticate_thread.bind(password))
+
+
+func cancel_session() -> void:
+	var response := greeter.cancel_session()
+	if response is GreetdError:
+		_log_info(response.error_description)
+		return
+
+	%AuthAnswer.call_deferred("grab_focus")
+	_log_info("Cancelled successfully")
 
 
 ## Get the list of users and select the last user that logged in.
@@ -68,39 +124,6 @@ func _on_user_selected(_index: int):
 ## When pressing "Enter" run the login
 func _on_auth_answer_submitted(_password):
 	login()
-
-
-func login() -> void:
-	# Prevent multiple simultaneous login attempts
-	if is_authenticating:
-		return
-
-	is_authenticating = true
-	_set_ui_enabled(false)
-	%Alert.text = "Authenticating..."
-
-	var username: String = %Username.text
-	var password: String = %AuthAnswer.text
-	var response := greeter.create_session(username)
-
-	if response is GreetdError:
-		%Alert.text = response.error_description
-		_log_info(response.error_description)
-		is_authenticating = false
-		_set_ui_enabled(true)
-		return
-	elif response is GreetdAuthMessage:
-		_log_info("%s - %s" % [response.auth_message_type, response.auth_message])
-	else:
-		# TODO if the response is a success then we can start the session
-		# How does that happen? Users without passwords?
-		pass
-
-	_log_info("Session created")
-
-	# Run the blocking authentication on a separate thread
-	auth_thread = Thread.new()
-	auth_thread.start(_authenticate_thread.bind(password))
 
 
 func _authenticate_thread(password: String) -> void:
@@ -147,16 +170,6 @@ func _on_auth_complete(response: GreetdResponse) -> void:
 	_quit()
 
 
-func cancel_session() -> void:
-	var response := greeter.cancel_session()
-	if response is GreetdError:
-		_log_info(response.error_description)
-		return
-
-	%AuthAnswer.call_deferred("grab_focus")
-	_log_info("Cancelled successfully")
-
-
 func _set_ui_enabled(enabled: bool) -> void:
 	%LogIn.disabled = not enabled
 	%AuthAnswer.editable = enabled
@@ -166,12 +179,6 @@ func _set_ui_enabled(enabled: bool) -> void:
 
 func _log_info(text: String) -> void:
 	%Log.add_text(text + "\n")
-
-
-## Manually handle app closing.
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		_quit()
 
 
 ## Save config and quit
