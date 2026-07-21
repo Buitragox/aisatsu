@@ -54,6 +54,12 @@ var connection_list: Array[Resource] = []
 var installer: FormatterInstaller = null
 var formatter_cache_dir: String
 var menu: FormatterMenu = null
+var _has_uninstall_command := false
+# Used to auto detect changes to the project's .editorconfig file.
+var _editorconfig_last_modified_time := -1
+# Editorconfig allows setting rules per path glob. We track globs for the format
+# on save rule here so users can enable it selectively for specific folders.
+var _editorconfig_format_on_save_rules: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -83,9 +89,6 @@ func _enter_tree() -> void:
 	installer.installation_completed.connect(
 		func _on_installation_completed(binary_path: String) -> void:
 			set_editor_setting(SETTING_FORMATTER_PATH, binary_path)
-			add_format_command()
-			remove_uninstall_command()
-			add_uninstall_command()
 			# After installing the formatter we can add the menu option to show the uninstall command
 			if is_instance_valid(menu):
 				menu.update_menu(true)
@@ -148,7 +151,7 @@ func format_current_script() -> bool:
 		return false
 	var code_edit: CodeEdit = EditorInterface.get_script_editor().get_current_editor().get_base_editor()
 
-	var formatted_code := format_code(current_script)
+	var formatted_code := format_code(current_script, false, code_edit.text)
 	if formatted_code.is_empty():
 		return false
 
@@ -199,15 +202,17 @@ func _on_resource_saved(saved_resource: Resource) -> void:
 	if saved_resource is not GDScript:
 		return
 
-	var format_on_save := get_editor_setting(SETTING_FORMAT_ON_SAVE) as bool
+	var script := saved_resource as GDScript
+	var do_format_on_save := get_editor_setting(SETTING_FORMAT_ON_SAVE) as bool
+	var editorconfig_format_on_save = get_editorconfig_format_on_save(script.resource_path)
+	if editorconfig_format_on_save != null:
+		do_format_on_save = editorconfig_format_on_save as bool
 	var lint_on_save := get_editor_setting(SETTING_LINT_ON_SAVE) as bool
 
-	if not format_on_save and not lint_on_save:
+	if not do_format_on_save and not lint_on_save:
 		return
 
-	var script := saved_resource as GDScript
-
-	var ignored_directories := get_editor_setting(SETTING_IGNORED_DIRECTORIES)
+	var ignored_directories = get_editor_setting(SETTING_IGNORED_DIRECTORIES)
 	var path = script.resource_path.trim_prefix("res://")
 
 	var script_path_parts := path.split("/")
@@ -228,7 +233,7 @@ func _on_resource_saved(saved_resource: Resource) -> void:
 	if not has_command(get_editor_setting(SETTING_FORMATTER_PATH)) or not is_instance_valid(script):
 		return
 
-	if format_on_save:
+	if do_format_on_save:
 		var formatted_code := format_code(script, false)
 		if formatted_code.is_empty():
 			return
@@ -270,12 +275,14 @@ func _on_resource_saved(saved_resource: Resource) -> void:
 
 
 func add_format_command() -> void:
-	if not has_command(get_editor_setting(SETTING_FORMATTER_PATH)):
-		push_error(
-			'GDScript Formatter: The command "%s" can\'t be found in your environment.\n' % get_editor_setting(SETTING_FORMATTER_PATH) +
-			'\tIf you have not installed the formatter, use the install/update command from the command palette.\n' +
-			'\tIf you have installed the formatter, change "formatter_path" to a valid command in the "GDScript Formatter" section in Editor Settings.',
-		)
+	var formatter_path := get_editor_setting(SETTING_FORMATTER_PATH) as String
+	if formatter_path.is_empty() or not has_command(formatter_path):
+		if not formatter_path.is_empty():
+			push_error(
+				'GDScript Formatter: The command "%s" can\'t be found in your environment.\n' % formatter_path +
+				'\tIf you have not installed the formatter, use the install/update command from the command palette.\n' +
+				'\tIf you have installed the formatter, change "formatter_path" to a valid command in the "GDScript Formatter" section in Editor Settings.',
+			)
 		return
 	var shortcut := get_editor_setting(SETTING_SHORTCUT) as Shortcut
 	EditorInterface.get_command_palette().add_command(
@@ -326,10 +333,14 @@ func add_uninstall_command() -> void:
 			COMMAND_PALETTE_CATEGORY + COMMAND_PALETTE_UNINSTALL,
 			uninstall_formatter,
 		)
+		_has_uninstall_command = true
 
 
 func remove_uninstall_command() -> void:
+	if not _has_uninstall_command:
+		return
 	EditorInterface.get_command_palette().remove_command(COMMAND_PALETTE_CATEGORY + COMMAND_PALETTE_UNINSTALL)
+	_has_uninstall_command = false
 
 
 func add_report_issue_command() -> void:
@@ -381,7 +392,7 @@ func reorder_code() -> bool:
 		return false
 	var code_edit: CodeEdit = EditorInterface.get_script_editor().get_current_editor().get_base_editor()
 
-	var formatted_code := format_code(current_script, true)
+	var formatted_code := format_code(current_script, true, code_edit.text)
 	if formatted_code.is_empty():
 		return false
 
@@ -418,6 +429,8 @@ func _on_menu_item_selected(command: String) -> void:
 
 
 func has_command(command: String) -> bool:
+	if command.is_empty():
+		return false
 	var output: Array = []
 	var exit_code := OS.execute(command, ["--version"], output)
 	return exit_code == OK
@@ -459,14 +472,94 @@ func has_editor_setting(setting_name: String) -> bool:
 	return editor_settings.has_setting(full_setting_key)
 
 
-## Formats a GDScript file using the GDScript Formatter,
-## and returns the formatted code as a string. Optionally reorders the code.
-func format_code(script: GDScript, force_reorder := false) -> String:
+## Returns true if this script should be formatted automatically on save, based
+## on the project's .editorconfig file. Returns false if the config says not to
+## format on save. Returns null if no rule matches (then it's the user editor
+## settings that take over).
+func get_editorconfig_format_on_save(script_path: String) -> Variant:
+	var editorconfig_path := ProjectSettings.globalize_path("res://.editorconfig")
+	var modified_time := FileAccess.get_modified_time(editorconfig_path)
+	if modified_time != _editorconfig_last_modified_time:
+		_editorconfig_last_modified_time = modified_time
+		_editorconfig_format_on_save_rules.clear()
+		load_editorconfig_format_on_save_rules(editorconfig_path)
+
+	var relative_script_path := script_path.trim_prefix("res://")
+	var format_on_save = null
+	for rule: Dictionary in _editorconfig_format_on_save_rules:
+		var pattern := rule["pattern"] as String
+		if pattern.is_empty() or editorconfig_section_matches(pattern, relative_script_path):
+			format_on_save = rule["format_on_save"]
+
+	return format_on_save
+
+
+## Loads the project editorconfig file and parses format on save rules.
+func load_editorconfig_format_on_save_rules(editorconfig_path: String) -> void:
+	var editorconfig_file := FileAccess.open(editorconfig_path, FileAccess.READ)
+	if editorconfig_file == null:
+		return
+
+	var pattern := ""
+
+	while not editorconfig_file.eof_reached():
+		var line := editorconfig_file.get_line().strip_edges()
+		if line.is_empty() or line.begins_with("#") or line.begins_with(";"):
+			continue
+
+		if line.begins_with("[") and line.ends_with("]"):
+			pattern = line.trim_prefix("[").trim_suffix("]")
+			continue
+
+		if not line.contains("="):
+			continue
+
+		var key_and_value := line.split("=", true, 1)
+		if key_and_value[0].strip_edges().to_lower() != "gdscript_formatter_format_on_save":
+			continue
+
+		match key_and_value[1].strip_edges().to_lower():
+			"true":
+				_editorconfig_format_on_save_rules.append({"pattern": pattern, "format_on_save": true})
+			"false":
+				_editorconfig_format_on_save_rules.append({"pattern": pattern, "format_on_save": false})
+
+	editorconfig_file.close()
+
+
+## Returns true if an EditorConfig section applies to a saved script.
+## pattern: The EditorConfig pattern to match against.
+## relative_script_path: The path of the script relative to the project root.
+func editorconfig_section_matches(pattern: String, relative_script_path: String) -> bool:
+	if pattern.is_empty():
+		return false
+
+	var normalized_pattern := pattern.trim_prefix("/")
+	var matching_path := relative_script_path
+	# If there's no / in the pattern it means this pattern targets a filename.
+	# It's not a folder/path glob pattern.
+	if not normalized_pattern.contains("/"):
+		matching_path = relative_script_path.get_file()
+
+	return matching_path.match(normalized_pattern)
+
+
+## Formats GDScript code using the GDScript Formatter and returns it as a string.
+## When source_content is null, reads the code from the GDScript resource directly.
+## Otherwise, formats source_content without reading from the file.
+##
+## Pass a string through source_content when the user is editing the script in
+## the editor and requests formatting without having saved their changes (in
+## that case, the code they're editing only exists in the script editor's open
+## tab).
+func format_code(script: GDScript, force_reorder := false, source_content: Variant = null) -> String:
 	var script_path := script.resource_path
-	if script_path.is_empty():
+	if source_content == null and script_path.is_empty():
 		push_error("GDScript Formatter Error: Can't format an unsaved script.")
 		return ""
 
+	# Source content is not set, read from the GDScript resource instead.
+	#
 	# This is a bit of a hack to avoid two issues:
 	#
 	# 1. Running GDScript formatter on stdin/stdout through Godot with
@@ -479,22 +572,23 @@ func format_code(script: GDScript, force_reorder := false) -> String:
 	#
 	# To work around that, I save a copy of the script as a temporary file,
 	# format the file, and read it specifically as a UTF-8 string.
-	var source_file := FileAccess.open(ProjectSettings.globalize_path(script_path), FileAccess.READ)
-	if not source_file:
-		push_error("GDScript Formatter Error: Cannot read source file: " + script_path)
-		return ""
+	if source_content == null:
+		var source_file := FileAccess.open(ProjectSettings.globalize_path(script_path), FileAccess.READ)
+		if not source_file:
+			push_error("GDScript Formatter Error: Cannot read source file: " + script_path)
+			return ""
 
-	# FileAccess.get_as_text() reads the file as UTF-8. We use it here and after
-	# formatting the temporary file.
-	var source_content := source_file.get_as_text()
-	source_file.close()
+		# FileAccess.get_as_text() reads the file as UTF-8. We use it here and after
+		# formatting the temporary file.
+		source_content = source_file.get_as_text()
+		source_file.close()
 
 	var path_temporary_file := OS.get_temp_dir().path_join("gdscript_formatter_%d.gd" % Time.get_ticks_msec())
 	var temporary_file := FileAccess.open(path_temporary_file, FileAccess.WRITE)
 	if temporary_file == null:
 		push_error("GDScript Formatter Error: Cannot create temporary file: " + path_temporary_file)
 		return ""
-	temporary_file.store_string(source_content)
+	temporary_file.store_string(source_content as String)
 	temporary_file.close()
 
 	var formatter_arguments := PackedStringArray()
@@ -528,7 +622,7 @@ func format_code(script: GDScript, force_reorder := false) -> String:
 		else:
 			push_error("Format GDScript: Cannot read formatted output from temp file")
 	else:
-		push_error("Format GDScript failed: " + script_path)
+		push_error("Format GDScript failed: " + (script_path if not script_path.is_empty() else "unsaved script"))
 		push_error(
 			"\tExit code: " + str(exit_code) + " Output: " +
 			(output[0].strip_edges() if output.size() > 0 else "No output"),
