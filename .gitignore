@@ -29,9 +29,14 @@ bin/windows/*
 # Export
 *.x86_64
 *.sh
+!install.sh
 
 # Imported translations (automatically generated from CSV files)
 *.translation
+
+# Addons
+addons/
+!addons/GDQuest_GDScript_formatter
 
 # Other stuff
 *.log
