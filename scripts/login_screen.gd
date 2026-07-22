@@ -1,20 +1,21 @@
 extends Node
 
+# TODO: implement state validation
 # TODO: extract the config to it's own class?
 const CONFIG_PATH = "user://config.cfg"
 
-var greeter := Greeter.new()
+var client := GreetdClient.new()
+
 var config := ConfigFile.new()
+
 var auth_thread: Thread = null
 var is_authenticating := false
 
 
-func _init() -> void:
-	if OS.has_feature("template"):
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-
-
 func _ready() -> void:
+	if OS.has_feature("template"):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+
 	var err := config.load(CONFIG_PATH)
 	if err != Error.OK:
 		printerr("Failed to open config.cfg")
@@ -30,7 +31,6 @@ func _ready() -> void:
 	%Restart.pressed.connect(_on_restart_pressed)
 
 	%AuthAnswer.grab_focus() # Automatically focus the password field for quick login.
-
 	get_tree().set_auto_accept_quit(false) # Handle quit manually
 
 
@@ -51,7 +51,7 @@ func login() -> void:
 
 	var username: String = %Username.text
 	var password: String = %AuthAnswer.text
-	var response := greeter.create_session(username)
+	var response := client.create_session(username)
 
 	if response is GreetdError:
 		%Alert.text = response.error_description
@@ -60,7 +60,12 @@ func login() -> void:
 		_set_ui_enabled(true)
 		return
 	elif response is GreetdAuthMessage:
-		_log_info("%s - %s" % [response.auth_message_type, response.auth_message])
+		_log_info(
+				"%s - %s" % [
+					response.Type.keys()[response.auth_message_type],
+					response.auth_message,
+				]
+		)
 	else:
 		# TODO if the response is a success then we can start the session
 		# How does that happen? Users without passwords?
@@ -74,19 +79,19 @@ func login() -> void:
 
 
 func cancel_session() -> void:
-	var response := greeter.cancel_session()
+	var response := client.cancel_session()
 	if response is GreetdError:
 		_log_info(response.error_description)
 		return
 
 	%AuthAnswer.call_deferred("grab_focus")
-	_log_info("Cancelled successfully")
+	_log_info("Canceled successfully")
 
 
 ## Get the list of users and select the last user that logged in.
 func _init_users():
 	var last_user: String = config.get_value("General", "last_user", "")
-	var users := greeter.get_users()
+	var users := SystemInfo.get_users()
 
 	for i in range(users.size()):
 		var user := users[i]
@@ -99,7 +104,7 @@ func _init_users():
 func _init_sessions():
 	var last_session = config.get_value("General", "last_session", "")
 
-	var sessions := greeter.get_wayland_sessions()
+	var sessions := SystemInfo.get_wayland_sessions()
 	var index = 0
 	for session in sessions:
 		%SessionSelect.add_item(session["Name"])
@@ -127,7 +132,7 @@ func _on_auth_answer_submitted(_password):
 
 
 func _authenticate_thread(password: String) -> void:
-	var response = greeter.answer_auth_message(password)
+	var response = client.answer_auth_message(password)
 	# Call back to main thread to handle the response
 	call_deferred("_on_auth_complete", response)
 
@@ -147,7 +152,9 @@ func _on_auth_complete(response: GreetdResponse) -> void:
 		return
 	elif response is GreetdAuthMessage:
 		# TODO: Instead of canceling the session, we should continue asking for stuff if necessary
-		_log_info("GreetdAuthMessage: %s - %s" % [response.auth_message_type, response.auth_message])
+		_log_info(
+				"GreetdAuthMessage: %s - %s" % [response.auth_message_type, response.auth_message]
+		)
 		cancel_session()
 		is_authenticating = false
 		_set_ui_enabled(true)
@@ -157,8 +164,8 @@ func _on_auth_complete(response: GreetdResponse) -> void:
 
 	# TODO: Only do this if the answer is a success
 	var cmd = %SessionSelect.get_selected_metadata()
-	response = greeter.start_session(cmd)
-	if response is GreetdError:
+	response = client.start_session([cmd])
+	if response is GreetdError or response is GreetdClientError:
 		%Alert.text = response.error_description
 		_log_info(response.error_description)
 		cancel_session()
