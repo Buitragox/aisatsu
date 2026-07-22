@@ -11,7 +11,7 @@ const MAX_USER_ID := 60000
 
 static func get_users() -> Array[String]:
 	# HACK: Use fake data for debugging
-	if not OS.has_feature("linux") or OS.has_feature("editor"):
+	if _use_fake_data():
 		return ["fakeuser", "stubby", "godoty"]
 
 	var output: Array[String] = []
@@ -42,7 +42,7 @@ static func get_users() -> Array[String]:
 ## Returns an array of dictionaries where each dictionary has the desktop file keys.
 static func get_wayland_sessions() -> Array[Dictionary]:
 	# HACK: Use fake data for debugging
-	if not OS.has_feature("linux") or OS.has_feature("editor"):
+	if _use_fake_data():
 		return _stub_wayland_sessions()
 
 	var sessions: Array[Dictionary] = []
@@ -66,6 +66,10 @@ static func get_wayland_sessions() -> Array[Dictionary]:
 		sessions.append(session)
 
 	return sessions
+
+
+static func _use_fake_data() -> bool:
+	return not OS.has_feature("linux") or not OS.has_feature("template")
 
 
 static func _parse_desktop_file(file: FileAccess) -> Dictionary:
