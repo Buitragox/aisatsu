@@ -1,12 +1,7 @@
 extends Node
 
 # TODO: implement state validation
-# TODO: extract the config to it's own class?
-const CONFIG_PATH = "user://config.cfg"
-
 var client := GreetdClient.new()
-
-var config := ConfigFile.new()
 
 var auth_thread: Thread = null
 var is_authenticating := false
@@ -15,10 +10,6 @@ var is_authenticating := false
 func _ready() -> void:
 	if OS.has_feature("template"):
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
-
-	var err := config.load(CONFIG_PATH)
-	if err != Error.OK:
-		printerr("Failed to open config.cfg")
 
 	_init_sessions()
 	_init_users()
@@ -60,12 +51,7 @@ func login() -> void:
 		_set_ui_enabled(true)
 		return
 	elif response is GreetdAuthMessage:
-		_log_info(
-				"%s - %s" % [
-					response.Type.keys()[response.auth_message_type],
-					response.auth_message,
-				]
-		)
+		_log_info("%s - %s" % [response.auth_message_type_string(), response.auth_message])
 	else:
 		# TODO if the response is a success then we can start the session
 		# How does that happen? Users without passwords?
@@ -90,7 +76,7 @@ func cancel_session() -> void:
 
 ## Get the list of users and select the last user that logged in.
 func _init_users():
-	var last_user: String = config.get_value("General", "last_user", "")
+	var last_user: String = Config.last_user
 	var users := SystemInfo.get_users()
 
 	for i in range(users.size()):
@@ -102,7 +88,7 @@ func _init_users():
 
 ## Get a list of sessions and select the last used session.
 func _init_sessions():
-	var last_session = config.get_value("General", "last_session", "")
+	var last_session = Config.last_session
 
 	var sessions := SystemInfo.get_wayland_sessions()
 	var index = 0
@@ -116,14 +102,13 @@ func _init_sessions():
 
 ## Save the current selected session as the last one.
 func _on_session_selected(_index: int):
-	var session = %SessionSelect.text
-	config.set_value("General", "last_session", session)
+	Config.last_session = %SessionSelect.text
 
 
 ## Save the selected user as the last one.
 func _on_user_selected(_index: int):
 	var user = %Username.text
-	config.set_value("General", "last_user", user)
+	Config.last_user = user
 
 
 ## When pressing "Enter" run the login
@@ -153,7 +138,7 @@ func _on_auth_complete(response: GreetdResponse) -> void:
 	elif response is GreetdAuthMessage:
 		# TODO: Instead of canceling the session, we should continue asking for stuff if necessary
 		_log_info(
-				"GreetdAuthMessage: %s - %s" % [response.auth_message_type, response.auth_message]
+			"GreetdAuthMessage: %s - %s" % [response.auth_message_type, response.auth_message]
 		)
 		cancel_session()
 		is_authenticating = false
@@ -190,7 +175,7 @@ func _log_info(text: String) -> void:
 
 ## Save config and quit
 func _quit() -> void:
-	config.save(CONFIG_PATH)
+	Config.save()
 	get_tree().quit()
 
 
