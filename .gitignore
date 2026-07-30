@@ -10,9 +10,6 @@ bin/*
 !.vscode/extensions.json
 .DS_Store
 
-# Jetbrains
-.idea/
-
 # Imported translations (automatically generated from CSV files)
 *.translation
 
