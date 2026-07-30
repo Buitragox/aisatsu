@@ -9,6 +9,7 @@ const MIN_USER_ID := 1000
 const MAX_USER_ID := 60000
 
 
+## Gets regular users by parsing the output from `getent passwd`.
 static func get_users() -> Array[String]:
 	# HACK: Use fake data for debugging
 	if _use_fake_data():
@@ -35,8 +36,6 @@ static func get_users() -> Array[String]:
 	return users
 
 
-# NOTE: very simple .desktop file parsing. Maybe it will be necessary to improve
-# this later.
 ## Searches for wayland sessions in "/usr/share/wayland-sessions/" and
 ## performs a very simple parsing of .desktop files.[br][br]
 ## Returns an array of dictionaries where each dictionary has the desktop file keys.
@@ -72,6 +71,8 @@ static func _use_fake_data() -> bool:
 	return not OS.has_feature("linux") or not OS.has_feature("template")
 
 
+# NOTE: very simple .desktop file parsing. Maybe it will be necessary to improve
+# this later.
 static func _parse_desktop_file(file: FileAccess) -> Dictionary:
 	var session := { }
 	var length := file.get_length()
@@ -81,7 +82,7 @@ static func _parse_desktop_file(file: FileAccess) -> Dictionary:
 		# Skip comments
 		if line.begins_with("#"):
 			continue
-		# Skip section declaration
+		# Skip section declarations
 		if line.begins_with("["):
 			continue
 		if line.is_empty():
@@ -99,12 +100,6 @@ static func _stub_wayland_sessions() -> Array[Dictionary]:
 			"Name": "MockPlasma (Wayland)",
 			"Exec": "/usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland",
 		},
-		{
-			"Name": "MockHyprland",
-			"Exec": "/usr/bin/start-hyprland",
-		},
-		{
-			"Name": "MockSway",
-			"Exec": "sway",
-		},
+		{ "Name": "MockHyprland", "Exec": "/usr/bin/start-hyprland" },
+		{ "Name": "MockSway", "Exec": "sway" },
 	]
