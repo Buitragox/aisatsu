@@ -1,12 +1,17 @@
-## Low-level greetd IPC client. Each call opens and closes a socket connection.[br][br]
-## Uses the [code]GREETD_SOCK[/code] environment variable as the [member socket_path] by default.[br][br]
+## Low-level async greetd IPC client. Each call opens and closes a socket connection.
+##
+## Needs to be added to the SceneTree to access [code]get_tree().process_frame[/code] for async functionality.
+## [br][br]
+## Uses the [code]GREETD_SOCK[/code] environment variable as the [member socket_path] by default.
+## [br][br]
 ## If [member socket_path] is empty and it's running a debug build,it will try to connect to [code]"/tmp/mock_greetd.sock"[/code],
 ## which is the path used by the [code]"mock_server.py"[/code] script.
 # TODO: I should probably create an integrated mock client for easier debugging instead of it being in a separate python script.
 class_name GreetdClient
-extends RefCounted
+extends Node
 
 var socket_path: String
+var _stream := StreamPeerUDS.new()
 
 
 func _init(p_socket_path: String = "") -> void:
@@ -20,7 +25,7 @@ func _init(p_socket_path: String = "") -> void:
 
 
 func create_session(username: String) -> GreetdResponse:
-	return _send_request({ "type": "create_session", "username": username })
+	return await _send_request({ "type": "create_session", "username": username })
 
 
 func answer_auth_message(answer: Variant) -> GreetdResponse:
@@ -31,38 +36,47 @@ func answer_auth_message(answer: Variant) -> GreetdResponse:
 			"Parameter 'answer' must be String or null; got %s" % type_string(answer_type),
 		)
 
-	return _send_request({ "type": "post_auth_message_response", "response": answer })
+	return await _send_request({ "type": "post_auth_message_response", "response": answer })
 
 
 func start_session(cmd: Array[String], env: Array[String] = []) -> GreetdResponse:
-	return _send_request({ "type": "start_session", "cmd": cmd, "env": env })
+	return await _send_request({ "type": "start_session", "cmd": cmd, "env": env })
 
 
 func cancel_session() -> GreetdResponse:
-	return _send_request({ "type": "cancel_session" })
+	return await _send_request({ "type": "cancel_session" })
 
 
 func _send_request(request: Dictionary) -> GreetdResponse:
-	var stream := StreamPeerUDS.new()
-	var error := stream.connect_to_host(socket_path)
+	var error := await _connect_to_host()
 	if error != OK:
 		return GreetdClientError.new(error, "Failed to connect to greetd: %s" % error_string(error))
 
-	stream.put_utf8_string(JSON.stringify(request))
-	var json_response := stream.get_utf8_string()
-	stream.disconnect_from_host()
+	_stream.put_utf8_string(JSON.stringify(request))
+
+	# NOTE: Some requests may take a long time to get a response.
+	# For example, if you answer an auth message with the wrong password
+	# greetd will take around 3 seconds to answer.
+	while _stream.get_available_bytes() == 0:
+		await get_tree().process_frame
+
+	var json_response := _stream.get_utf8_string()
+
+	_stream.disconnect_from_host()
 
 	var json := JSON.new()
 	error = json.parse(json_response)
 	if error != OK:
 		return GreetdClientError.new(
 			error,
-			"Invalid JSON in greetd response at line %d: %s"
-			% [json.get_error_line(), json.get_error_message()],
+			"Invalid JSON in greetd response: %s" % json.get_error_message(),
 		)
 
 	if typeof(json.data) != TYPE_DICTIONARY:
-		return GreetdClientError.new(ERR_INVALID_DATA, "Expected a JSON object from greetd")
+		return GreetdClientError.new(
+			ERR_INVALID_DATA,
+			"Expected a JSON object from greetd but got '%s'" % type_string(json.data),
+		)
 
 	var data: Dictionary = json.data
 	return _parse_response(data)
@@ -112,6 +126,23 @@ func _parse_response(data: Dictionary) -> GreetdResponse:
 				ERR_INVALID_DATA,
 				"Unknown greetd response type: %s" % response_type,
 			)
+
+
+func _connect_to_host() -> Error:
+	var error := _stream.connect_to_host(socket_path)
+	if error != OK:
+		return error
+
+	while _stream.get_status() == StreamPeerUDS.STATUS_CONNECTING:
+		# TODO: print for debugging, remove later
+		print_debug("I'm connecting!")
+		await get_tree().process_frame
+		_stream.poll()
+
+	if _stream.get_status() != StreamPeerUDS.STATUS_CONNECTED:
+		return ERR_CANT_CONNECT
+
+	return OK
 
 
 func _parse_auth_message_type(value: String) -> int:

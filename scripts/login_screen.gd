@@ -2,8 +2,6 @@ extends Node
 
 # TODO: implement state validation
 var client := GreetdClient.new()
-
-var auth_thread: Thread = null
 var is_authenticating := false
 
 
@@ -11,6 +9,8 @@ func _ready() -> void:
 	# TODO: might remove this and make it start fullscreen from the start
 	if OS.has_feature("template"):
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+
+	add_child(client)
 
 	_init_sessions()
 	_init_users()
@@ -43,7 +43,7 @@ func login() -> void:
 
 	var username: String = %Username.text
 	var password: String = %AuthAnswer.text
-	var response := client.create_session(username)
+	var response := await client.create_session(username)
 
 	if response is GreetdError:
 		%Alert.text = response.error_description
@@ -60,13 +60,13 @@ func login() -> void:
 
 	_log_info("Session created")
 
-	# Run the blocking authentication on a separate thread
-	auth_thread = Thread.new()
-	auth_thread.start(_authenticate_thread.bind(password))
+	response = await client.answer_auth_message(password)
+
+	_on_auth_complete(response)
 
 
 func cancel_session() -> void:
-	var response := client.cancel_session()
+	var response := await client.cancel_session()
 	if response is GreetdError:
 		_log_info(response.error_description)
 		return
@@ -95,6 +95,8 @@ func _init_sessions():
 	var index = 0
 	for session in sessions:
 		%SessionSelect.add_item(session["Name"])
+		# TODO: maybe split Exec into an array of args
+		# works without it but I think it's the correct thing to do
 		%SessionSelect.set_item_metadata(index, session["Exec"])
 		index += 1
 		if session["Name"] == last_session:
@@ -117,18 +119,7 @@ func _on_auth_answer_submitted(_password):
 	login()
 
 
-func _authenticate_thread(password: String) -> void:
-	var response = client.answer_auth_message(password)
-	# Call back to main thread to handle the response
-	call_deferred("_on_auth_complete", response)
-
-
 func _on_auth_complete(response: GreetdResponse) -> void:
-	# Clean up the thread
-	if auth_thread:
-		auth_thread.wait_to_finish()
-		auth_thread = null
-
 	if response is GreetdError:
 		%Alert.text = response.error_description
 		_log_info(response.error_description)
@@ -150,7 +141,7 @@ func _on_auth_complete(response: GreetdResponse) -> void:
 
 	# TODO: Only do this if the answer is a success
 	var cmd = %SessionSelect.get_selected_metadata()
-	response = client.start_session([cmd])
+	response = await client.start_session([cmd])
 	if response is GreetdError or response is GreetdClientError:
 		%Alert.text = response.error_description
 		_log_info(response.error_description)
