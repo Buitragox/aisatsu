@@ -8,6 +8,7 @@ var is_authenticating := false
 
 
 func _ready() -> void:
+	# TODO: might remove this and make it start fullscreen from the start
 	if OS.has_feature("template"):
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 

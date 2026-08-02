@@ -1,11 +1,20 @@
-# TODO: should this be a class with only static methods?
+## Low-level greetd IPC client. Each call opens and closes a socket connection.[br][br]
+## Uses the [code]GREETD_SOCK[/code] environment variable as the [member socket_path] by default.[br][br]
+## If [member socket_path] is empty and it's running a debug build,it will try to connect to [code]"/tmp/mock_greetd.sock"[/code],
+## which is the path used by the [code]"mock_server.py"[/code] script.
+# TODO: I should probably create an integrated mock client for easier debugging instead of it being in a separate python script.
 class_name GreetdClient
 extends RefCounted
 
-var socket_path := OS.get_environment("GREETD_SOCK")
+var socket_path: String
 
 
-func _init() -> void:
+func _init(p_socket_path: String = "") -> void:
+	socket_path = p_socket_path
+
+	if socket_path.is_empty():
+		socket_path = OS.get_environment("GREETD_SOCK")
+
 	if OS.is_debug_build() and socket_path.is_empty():
 		socket_path = "/tmp/mock_greetd.sock"
 
@@ -74,10 +83,7 @@ func _parse_response(data: Dictionary) -> GreetdResponse:
 			var message_type: Variant = data.get("auth_message_type")
 			var message: Variant = data.get("auth_message")
 			if not message_type is String or not message is String:
-				return GreetdClientError.new(
-					ERR_INVALID_DATA,
-					"Invalid auth_message response",
-				)
+				return GreetdClientError.new(ERR_INVALID_DATA, "Invalid auth_message response")
 
 			var parsed_type := _parse_auth_message_type(message_type)
 			if parsed_type == -1:
@@ -91,10 +97,7 @@ func _parse_response(data: Dictionary) -> GreetdResponse:
 			var error_type: Variant = data.get("error_type")
 			var description: Variant = data.get("description")
 			if not error_type is String or not description is String:
-				return GreetdClientError.new(
-					ERR_INVALID_DATA,
-					"Invalid error response from greetd",
-				)
+				return GreetdClientError.new(ERR_INVALID_DATA, "Invalid error response from greetd")
 
 			var parsed_error_type := _parse_greetd_error_type(error_type)
 			if parsed_error_type == -1:
