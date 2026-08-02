@@ -28,6 +28,12 @@ func create_session(username: String) -> GreetdResponse:
 	return await _send_request({ "type": "create_session", "username": username })
 
 
+## Send [code]post_auth_message_response[/code] request type with [param answer]
+## [br][br]
+## [param answer] can be [code]null[/code] or [String]
+## [br][br]
+## Use [code]null[/code] for acknowledging [constant GreetdAuthMessage.Type.INFO]
+## and [constant GreetdAuthMessage.Type.ERROR] requests
 func answer_auth_message(answer: Variant) -> GreetdResponse:
 	var answer_type := typeof(answer)
 	if answer_type != TYPE_NIL and answer_type != TYPE_STRING:
@@ -56,7 +62,7 @@ func _send_request(request: Dictionary) -> GreetdResponse:
 
 	# NOTE: Some requests may take a long time to get a response.
 	# For example, if you answer an auth message with the wrong password
-	# greetd will take around 3 seconds to answer.
+	# PAM will take around 3 seconds to answer.
 	while _stream.get_available_bytes() == 0:
 		await get_tree().process_frame
 
