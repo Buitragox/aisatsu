@@ -1,3 +1,4 @@
+## Static utility class for discovering system users and sessions.
 class_name SystemInfo
 extends RefCounted
 

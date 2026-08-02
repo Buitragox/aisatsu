@@ -13,6 +13,7 @@ func _ready() -> void:
 	self.load()
 
 
+# TODO: check if it is possible to autosave on exit/quit
 func save() -> Error:
 	var err := _config.save(CONFIG_PATH)
 	if err != OK:
