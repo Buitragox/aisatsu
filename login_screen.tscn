@@ -85,32 +85,28 @@ layout_mode = 2
 theme = ExtResource("3_3u8nt")
 text = "Log in"
 
-[node name="System" type="HBoxContainer" parent="." unique_id=55084471]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.19583334
-anchor_top = 0.67425925
-anchor_right = 0.27064583
-anchor_bottom = 0.7184815
-offset_top = -0.2000122
-offset_right = 0.35998535
-offset_bottom = 0.039978027
+[node name="Spacer" type="Control" parent="VBoxContainer" unique_id=1077995617]
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+
+[node name="System" type="HBoxContainer" parent="VBoxContainer" unique_id=55084471]
+layout_mode = 2
 theme_override_constants/separation = 48
 alignment = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Shutdown" type="Button" parent="System" unique_id=2009518262]
+[node name="Shutdown" type="Button" parent="VBoxContainer/System" unique_id=2009518262]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
-size_flags_horizontal = 3
 theme = SubResource("Theme_np7ol")
 icon = ExtResource("4_np7ol")
 icon_alignment = 1
 
-[node name="Restart" type="Button" parent="System" unique_id=367325674]
+[node name="Restart" type="Button" parent="VBoxContainer/System" unique_id=367325674]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
-size_flags_horizontal = 3
 icon = ExtResource("5_np7ol")
 icon_alignment = 1
 
