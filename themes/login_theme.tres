@@ -1,0 +1,6 @@
+[gd_resource type="Theme" format=3 uid="uid://dmcbsxrdqxoie"]
+
+[ext_resource type="FontFile" uid="uid://blfvo8vb7up4g" path="res://assets/fonts/Futura-Heavy.ttf" id="1_mc151"]
+
+[resource]
+default_font = ExtResource("1_mc151")

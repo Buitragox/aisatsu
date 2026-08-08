@@ -1,9 +1,11 @@
 [gd_scene format=3 uid="uid://dh0oj81pufivs"]
 
+[ext_resource type="Theme" uid="uid://dmcbsxrdqxoie" path="res://themes/login_theme.tres" id="1_1eh3c"]
 [ext_resource type="Texture2D" uid="uid://c7gm3ibtnu2jv" path="res://assets/ALLqk82Edit.png" id="1_3u8nt"]
 [ext_resource type="Script" uid="uid://borjdmkdqkxas" path="res://scripts/login_screen.gd" id="1_7xvqn"]
-[ext_resource type="Theme" uid="uid://bjaijm4ioiexd" path="res://styles/button.tres" id="3_3u8nt"]
+[ext_resource type="Theme" uid="uid://bjaijm4ioiexd" path="res://themes/button.tres" id="3_3u8nt"]
 [ext_resource type="Texture2D" uid="uid://dqh63ns6f65uk" path="res://assets/power.svg" id="4_np7ol"]
+[ext_resource type="FontFile" uid="uid://b8gxttofxjas7" path="res://assets/fonts/Futura-Black.ttf" id="4_pajja"]
 [ext_resource type="Texture2D" uid="uid://3gpyiuc8ve4j" path="res://assets/refresh-cw.svg" id="5_np7ol"]
 
 [sub_resource type="Theme" id="Theme_np7ol"]
@@ -16,6 +18,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_1eh3c")
 script = ExtResource("1_7xvqn")
 metadata/_edit_lock_ = true
 metadata/_edit_horizontal_guides_ = [616.0, 528.0]
@@ -33,9 +36,9 @@ stretch_mode = 6
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.16683334
-anchor_top = 0.2976667
-anchor_right = 0.30016667
-anchor_bottom = 0.5707779
+anchor_top = 0.1754445
+anchor_right = 0.305375
+anchor_bottom = 0.807815
 offset_left = -0.32000732
 offset_top = -0.480011
 offset_right = -0.32000732
@@ -47,11 +50,16 @@ metadata/_edit_use_anchors_ = true
 [node name="Clock" type="RichTextLabel" parent="VBoxContainer" unique_id=921779286]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/normal_font_size = 55
+theme_override_fonts/normal_font = ExtResource("4_pajja")
+theme_override_font_sizes/normal_font_size = 60
 bbcode_enabled = true
-text = "12:00"
+text = "12:00 PM"
 fit_content = true
 horizontal_alignment = 1
+
+[node name="Spacer2" type="Control" parent="VBoxContainer" unique_id=358941674]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
 
 [node name="Alert" type="Label" parent="VBoxContainer" unique_id=158664666]
 unique_name_in_owner = true
@@ -86,7 +94,7 @@ theme = ExtResource("3_3u8nt")
 text = "Log in"
 
 [node name="Spacer" type="Control" parent="VBoxContainer" unique_id=1077995617]
-custom_minimum_size = Vector2(0, 84)
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 
 [node name="System" type="HBoxContainer" parent="VBoxContainer" unique_id=55084471]
@@ -112,9 +120,12 @@ icon_alignment = 1
 
 [node name="Log" type="RichTextLabel" parent="." unique_id=1163721506]
 unique_name_in_owner = true
-layout_mode = 0
-offset_left = 600.0
-offset_top = 40.0
-offset_right = 976.0
-offset_bottom = 456.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 17.0
+offset_top = 13.0
+offset_right = -1560.0
+offset_bottom = -651.0
 scroll_following = true
