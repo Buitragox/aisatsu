@@ -2,7 +2,9 @@
 
 A greeter for [Greetd](https://man.sr.ht/~kennylevinsen/greetd/).
 
-Made with the [Godot game engine](https://godotengine.org/)... **Is this a good idea?** I don't know, but it's fun and it works pretty well •ᴗ•
+Made with the [Godot game engine](https://godotengine.org/)
+
+**Is this a good idea?** I don't know, but it's fun and it works pretty well •ᴗ•
 
 <p align="center">
   <img src="docs/example-greeter.png" alt="Example greeter" width="1000">
