@@ -26,6 +26,19 @@ func _ready() -> void:
 	get_tree().set_auto_accept_quit(false) # Handle quit manually
 
 
+func _process(_delta: float) -> void:
+	# TODO: should add config for 24 or 12 hour style clock
+	var time_data := Time.get_time_dict_from_system()
+	var hour := time_data["hour"] as int
+	var period := "AM"
+	if hour > 12:
+		hour -= 12
+		period = "PM"
+	var time := "%02d:%02d %s" % [hour, time_data["minute"], period]
+
+	%Clock.text = time
+
+
 ## Manually handle app closing.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:

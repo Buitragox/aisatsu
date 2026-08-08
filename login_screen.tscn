@@ -33,9 +33,9 @@ stretch_mode = 6
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.16683334
-anchor_top = 0.356
+anchor_top = 0.2976667
 anchor_right = 0.30016667
-anchor_bottom = 0.59300005
+anchor_bottom = 0.5707779
 offset_left = -0.32000732
 offset_top = -0.480011
 offset_right = -0.32000732
@@ -43,6 +43,15 @@ offset_bottom = -0.44006348
 theme_override_constants/separation = 20
 alignment = 1
 metadata/_edit_use_anchors_ = true
+
+[node name="Clock" type="RichTextLabel" parent="VBoxContainer" unique_id=921779286]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 55
+bbcode_enabled = true
+text = "12:00"
+fit_content = true
+horizontal_alignment = 1
 
 [node name="Alert" type="Label" parent="VBoxContainer" unique_id=158664666]
 unique_name_in_owner = true
@@ -76,54 +85,7 @@ layout_mode = 2
 theme = ExtResource("3_3u8nt")
 text = "Log in"
 
-[node name="Log" type="RichTextLabel" parent="." unique_id=1163721506]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 600.0
-offset_top = 40.0
-offset_right = 976.0
-offset_bottom = 456.0
-scroll_following = true
-
-[node name="CancelSession" type="Button" parent="." unique_id=1445519896]
-visible = false
-layout_mode = 0
-offset_left = 296.0
-offset_top = 672.0
-offset_right = 432.0
-offset_bottom = 704.0
-theme = ExtResource("3_3u8nt")
-text = "Cancel session"
-
-[node name="CreateSession" type="Button" parent="." unique_id=2128471965]
-visible = false
-layout_mode = 0
-offset_left = 464.0
-offset_top = 672.0
-offset_right = 600.0
-offset_bottom = 704.0
-text = "Create session
-"
-
-[node name="AnswerAuth" type="Button" parent="." unique_id=1102540955]
-visible = false
-layout_mode = 0
-offset_left = 296.0
-offset_top = 728.0
-offset_right = 432.0
-offset_bottom = 760.0
-text = "Submit answer"
-
-[node name="StartSession" type="Button" parent="." unique_id=1150643008]
-visible = false
-layout_mode = 0
-offset_left = 464.0
-offset_top = 728.0
-offset_right = 600.0
-offset_bottom = 760.0
-text = "Start session"
-
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=55084471]
+[node name="System" type="HBoxContainer" parent="." unique_id=55084471]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.19583334
@@ -137,7 +99,7 @@ theme_override_constants/separation = 48
 alignment = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Shutdown" type="Button" parent="HBoxContainer" unique_id=2009518262]
+[node name="Shutdown" type="Button" parent="System" unique_id=2009518262]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -145,9 +107,18 @@ theme = SubResource("Theme_np7ol")
 icon = ExtResource("4_np7ol")
 icon_alignment = 1
 
-[node name="Restart" type="Button" parent="HBoxContainer" unique_id=367325674]
+[node name="Restart" type="Button" parent="System" unique_id=367325674]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 icon = ExtResource("5_np7ol")
 icon_alignment = 1
+
+[node name="Log" type="RichTextLabel" parent="." unique_id=1163721506]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 600.0
+offset_top = 40.0
+offset_right = 976.0
+offset_bottom = 456.0
+scroll_following = true
